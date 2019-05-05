@@ -26,7 +26,7 @@ import androidx.room.ForeignKey.CASCADE
     * NO_ACTION：User删除时不做任何响应
     * RESTRICT：禁止User的删除／更新。当User删除或更新时，Sqlite会立马报错。
     * SET_NULL：当User删除时， Book中的userId会设为NULL
-    * SET_DEFAULT：与 SET_NULL类似，当User删除时，Book中的userId会设为默认值
+    * SET_DEFAULT：与SET_NULL类似，当User删除时，Book中的userId会设为默认值
     * */
     foreignKeys = [ForeignKey(
         entity = User::class,
