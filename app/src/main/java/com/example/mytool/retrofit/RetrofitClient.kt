@@ -30,7 +30,7 @@ class RetrofitClient private constructor() {
 
         lateinit var serverInputStream: InputStream
         lateinit var clientInputStream: InputStream
-        const val pass: String = "111111"
+        const val pass: String = ".pfx格式证书密码，用于得到客户端私钥"
 
         fun set(context: Context) {
             serverInputStream = context.assets.open("server.cer")
@@ -61,7 +61,7 @@ class RetrofitClient private constructor() {
                 trustManagerFactory.init(keyStore)
                 val trustManagers = trustManagerFactory.trustManagers
                 if (trustManagers.size != 1 || trustManagers[0] !is X509TrustManager) {
-//                    LoggerU.LogError("Unexpected default trust managers:" + Arrays.toString(trustManagers))
+//                    Logger.e("Unexpected default trust managers:" + Arrays.toString(trustManagers))
                     return
                 }
                 val trustManager = trustManagers[0] as X509TrustManager

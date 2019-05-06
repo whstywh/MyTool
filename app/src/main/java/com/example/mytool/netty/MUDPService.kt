@@ -4,230 +4,176 @@ package com.example.mytool.netty
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.DatagramChannel
+import io.netty.channel.socket.DatagramPacket
 import io.netty.channel.socket.nio.NioDatagramChannel
 import io.netty.handler.codec.MessageToMessageEncoder
 import io.netty.handler.timeout.IdleState
 import io.netty.handler.timeout.IdleStateEvent
 import io.netty.handler.timeout.IdleStateHandler
 import java.net.InetSocketAddress
-import java.util.*
-
-
-
+import java.nio.channels.DatagramChannel
+import java.util.concurrent.TimeUnit
 
 
 /**
  * Created by whstywh on 2019/3/18.
- * description：udp服务
+ * description：netty udp服务
  */
 class MUDPService(var address: InetSocketAddress) {
-//
-//    private var group: EventLoopGroup = NioEventLoopGroup()
-//    private var bootstrap: Bootstrap = Bootstrap()
-//    private var datagramChannel: DatagramChannel? = null
-//    private var channel: Channel? = null
-//    private var isStop = true
-////    private var cGuid = HardwareInfoU.instance?.getClientGuid()
-//    private var pGuid = ""
-//
-//    companion object {
-//        @Volatile
-//        var instance: MUDPService? = null
-//
-//        fun getI(address: InetSocketAddress) =
-//            instance ?: synchronized(MUDPService::class.java) {
-//                instance ?: MUDPService(address).also { instance = it }
-//            }
-//    }
-//
-//    fun bind() {
-//        try {
-//            isStop = false
-//            channel = bootstrap.bind(0).sync().channel()
-//            channel?.closeFuture()?.await()
-//        } catch (e: Exception) {
-//            LoggerU.LogError(e.message.toString())
-//        } finally {
-////            stop()
-//        }
-//    }
-//
-//    init {
-//
-//        try {
-//            bootstrap.group(group)
-//                .channelFactory(object : ChannelFactory<NioDatagramChannel> {
-//                    override fun newChannel(): NioDatagramChannel {
-//                        datagramChannel = DatagramChannel.open()
-//                        return NioDatagramChannel(datagramChannel)
-//                    }
-//                })
-//                .option(ChannelOption.SO_BROADCAST, true)
-//                .handler(object : ChannelInitializer<NioDatagramChannel>() {
-//                    override fun initChannel(p0: NioDatagramChannel?) {
-//                        p0?.pipeline()?.also {
-//                            it.addLast(EntityEncoder(address))
-//                            it.addLast(IdleStateHandler(0, 4, 0, TimeUnit.SECONDS))
-//                            it.addLast(EntityHandler(cGuid, object : TransmitPathGuidListener {
-//                                override fun transmitPathGuid(): String {
-//                                    return pGuid
-//                                }
-//                            }))
-//                        }
-//                    }
-//                })
-//        } catch (e: Exception) {
+
+    private var group: EventLoopGroup = NioEventLoopGroup()
+    private var bootstrap: Bootstrap = Bootstrap()
+    private var datagramChannel: DatagramChannel? = null
+    private var channel: Channel? = null
+    private var isStop = true
+
+    companion object {
+        @Volatile
+        var instance: MUDPService? = null
+
+        fun getI(address: InetSocketAddress) =
+            instance ?: synchronized(MUDPService::class.java) {
+                instance ?: MUDPService(address).also { instance = it }
+            }
+    }
+
+    fun bind() {
+        try {
+            isStop = false
+            channel = bootstrap.bind(0).sync().channel()
+            //监听服务器关闭
+            channel?.closeFuture()?.await()
+        } catch (e: Exception) {
+        } finally {
 //            stop()
-//        }
-//    }
-//
-//
-//    fun send(pathGuid: String, len: Int, data: ByteArray) {
-//        try {
+        }
+    }
+
+    init {
+
+        try {
+            /**
+             * Netty创建全部都是实现自AbstractBootstrap。
+             * 客户端的是Bootstrap，服务端的则是ServerBootstrap。
+             **/
+            bootstrap.group(group)
+                    //外部创建DatagramChannel，为了实现 VPNService.protect(datagramChannel)
+                .channelFactory(object : ChannelFactory<NioDatagramChannel> {
+                    override fun newChannel(): NioDatagramChannel {
+                        datagramChannel = DatagramChannel.open()
+                        return NioDatagramChannel(datagramChannel)
+                    }
+                })
+//                .channel(NioDatagramChannel::class.java)
+                .option(ChannelOption.SO_BROADCAST, true)
+                .handler(object : ChannelInitializer<NioDatagramChannel>() {
+                    override fun initChannel(p0: NioDatagramChannel?) {
+                        p0?.pipeline()?.also {
+                            it.addLast(EntityEncoder(address))
+                            //以实现对三种心跳的检测，分别是:
+                            //1）readerIdleTime：为读超时时间（即测试端一定时间内未接受到被测试端消息）;
+                            //2）writerIdleTime：为写超时时间（即测试端一定时间内向被测试端发送消息）
+                            //3）allIdleTime：所有类型的超时时间;
+                            it.addLast(IdleStateHandler(0, 4, 0, TimeUnit.SECONDS))
+                            it.addLast(EntityHandler())
+                        }
+                    }
+                })
+        } catch (e: Exception) {
+            stop()
+        }
+    }
+
+
+    fun send(len: Int, data: ByteArray) {
+        try {
 //            if (MVPNService.instance.protect(datagramChannel?.socket())) {
-//                pGuid = pathGuid
-//                val entity = cGuid?.let {
-//                    UdpEntity(
-//                        client_guid = it,
-//                        route_guid = pathGuid,
-//                        type = 0,
-//                        len = len,
-//                        data = data
-//                    )
-//                }
-//                channel?.writeAndFlush(entity)?.sync()
+            val entity = UdpEntity(
+                type = 0,
+                len = len,
+                data = data
+            )
+            channel?.writeAndFlush(entity)?.sync()
 //            }
-//        } catch (e: Exception) {
-//            LoggerU.LogError(e.message.toString())
-//        }
-//    }
-//
-//    fun stop() {
-//        isStop = true
-//        channel?.close()
-//        datagramChannel?.close()
-//        group.shutdownGracefully().sync()
-//        instance = null
-//    }
-//
-//    fun isStop() = isStop
-//}
-//
-///*TODO: 发送*/
-///*UdpEntity -> 加密 -> datagramPacket*/
-//class EntityEncoder(private var remoteAddress: InetSocketAddress) : MessageToMessageEncoder<UdpEntity>() {
-//
-//    private var jni: JNI = JNI()
-//
-//    override fun encode(p0: ChannelHandlerContext?, p1: UdpEntity?, p2: MutableList<Any>?) {
-//
-//        p0?.let {
-//            val byteBuf = it.alloc()?.buffer()
-//            p1?.getBytes()?.let {
-//                //aes加密
-//                val enBytearray = jni.AESEncrypt(it)
-//                //aes加密后的最后一个字节与数据头部(前36字节)进行逐字节异或
-//                for (i in 0 until 36) {
-//                    enBytearray[i] = enBytearray[i] xor enBytearray.last()
-//                }
-//                //对udp发送长度随机增加小与16的数(实际上增加的最后一个字节& 0xf)
-//                val l = enBytearray.size + (enBytearray.last() and 0xf)
-//                byteBuf?.writeBytes(enBytearray, 0, enBytearray.size)
-//            }?.let {
-//                p2?.add(DatagramPacket(it, remoteAddress))
-//            }
-//        }
-//    }
+        } catch (e: Exception) {
+        }
+    }
+
+    fun stop() {
+        isStop = true
+        channel?.close()
+        datagramChannel?.close()
+        //关闭EventLoopGroup，释放掉所有资源包括创建的线程
+        group.shutdownGracefully().sync()
+        instance = null
+    }
+
+    fun isStop() = isStop
 }
-//
-//
-//class EntityHandler(cGuid: String?, t: TransmitPathGuidListener) :
-//    SimpleChannelInboundHandler<DatagramPacket>() {
-//
-//    private var clientGuid = cGuid
-//    private var jni: JNI = JNI()
-//    private val tPListerner = t
-//
-//
-//    //断开连接时 重连
-//    override fun channelInactive(ctx: ChannelHandlerContext?) {
-//
-////        MUDPService.instance?.bind()
-//    }
-//
-//
-//    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
-//        // 写事件空闲时向服务器发送心跳包
-//        if (evt is IdleStateEvent) {
-//            val state = evt.state()
-//            if (state == IdleState.WRITER_IDLE) {
-//                val time = System.currentTimeMillis()
-//                val pathGuid = tPListerner.transmitPathGuid()
-//                val timeBytes = ByteConvert.longToBytes(time)
-//                val e = clientGuid?.let {
-//                    UdpEntity(
-//                        client_guid = it,
-//                        route_guid = pathGuid,
-//                        type = 2,
-//                        len = 8 + 36,
-//                        data = timeBytes
-//                    )
-//                }
-//                ctx?.writeAndFlush(e)
-//            } else {
-//                super.userEventTriggered(ctx, evt)
-//            }
-//        }
-//    }
-//
-//    /*TODO: 接受*/
-//    override fun channelRead0(p0: ChannelHandlerContext?, p1: DatagramPacket?) {
-//
-//        p1?.content()?.let {
-//            //将udp接收长度更改为正确长度,去除小于16字节的冗余尾部
-//            val readable = it.readableBytes()
-//            val bytes = it.array()
-//                .filterIndexed { index, _ ->
-//                    index < (readable / 16) * 16
-//                }.toByteArray()
-//            //使用最后一个字节与数据头部进行异或还原数据头部
-//            for (i in 0 until 36) {
-//                bytes[i] = bytes[i] xor bytes.last()
-//            }
-//            //aes解密
-//            jni.AESDecrypt(bytes)
-//        }?.let {
-//            val type = ByteConvert.bytesToUint(it.slice(32..33).toByteArray())
-//            val data = it.slice(36..it.lastIndex).toByteArray()
-//            when (type) {
-//                0 -> {
-//                    MVPNService.instance.responseUdpPacket(data)
-//                }
-//                3 -> {
-//                    val hb = formatterDate(ByteConvert.bytesToLong(data))
-//                    LoggerU.LogDebug("心跳回复包:$hb")
-//                }
-//                else -> {
-//                    LoggerU.LogError("线路无法使用!")
-//                }
-//            }
-//        }
-//
-//    }
-//
-//    /*系统时间 格式化*/
-//    private fun formatterDate(long: Long): String {
-//        val date = Date(long)
-//        val df = DateFormat.getDateTimeInstance(DateFormat.YEAR_FIELD, DateFormat.ERA_FIELD, Locale("zh", "CN"))
-//        return df.format(date)
-//    }
-//
-//}
-//
-///*接口回调 传递pathGuid*/
-//interface TransmitPathGuidListener {
-//    fun transmitPathGuid(): String
-//}
+
+/*TODO: 发送数据
+*
+* 编码: UdpEntity -> DatagramPacket
+* */
+class EntityEncoder(private var remoteAddress: InetSocketAddress) : MessageToMessageEncoder<UdpEntity>() {
+
+    override fun encode(p0: ChannelHandlerContext?, p1: UdpEntity?, p2: MutableList<Any>?) {
+
+        p0?.let {
+            val byteBuf = it.alloc()?.buffer()
+            p1?.getBytes()?.let {
+
+                //省略数据处理过程（加密...）
+
+                byteBuf?.writeBytes(it, 0, it.size)
+            }?.let {
+                p2?.add(DatagramPacket(it, remoteAddress))
+            }
+        }
+    }
+}
+
+
+class EntityHandler : SimpleChannelInboundHandler<DatagramPacket>() {
+
+
+    //断开连接时回调，可进行重连操作
+    override fun channelInactive(ctx: ChannelHandlerContext?) {
+//        MUDPService.instance?.bind()
+    }
+
+
+    //处理心跳超时事件,IdleStateHandler设置超时时间，条件触发时回调
+    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
+        if (evt is IdleStateEvent) {
+            val state = evt.state()
+            // 当空闲事件为写事件时向服务器发送心跳包
+            if (state == IdleState.WRITER_IDLE) {
+                val time = System.currentTimeMillis()
+                val timeBytes = ByteConvert.longToBytes(time)
+                val e = UdpEntity(
+                    type = 2,
+                    len = 8 + 4,
+                    data = timeBytes
+                )
+                ctx?.writeAndFlush(e)
+            } else {
+                super.userEventTriggered(ctx, evt)
+            }
+        }
+    }
+
+    /*
+    * TODO: 接受数据
+    *
+    * 业务逻辑处理
+    * */
+    override fun channelRead0(p0: ChannelHandlerContext?, p1: DatagramPacket?) {
+
+        //省略数据处理（解密...）
+
+    }
+
+}
 
 
