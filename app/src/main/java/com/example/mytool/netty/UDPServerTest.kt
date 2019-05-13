@@ -38,11 +38,9 @@ class UDPServerTest {
     init {
         try {
             bootstrap.group(group)
-                .channelFactory(object : ChannelFactory<NioDatagramChannel> {
-                    override fun newChannel(): NioDatagramChannel {
-                        datagramChannel = DatagramChannel.open()
-                        return NioDatagramChannel(datagramChannel)
-                    }
+                .channelFactory(ChannelFactory<NioDatagramChannel> {
+                    datagramChannel = DatagramChannel.open()
+                    NioDatagramChannel(datagramChannel)
                 })
                 .option(ChannelOption.SO_BROADCAST, true)
                 .handler(object : ChannelInitializer<NioDatagramChannel>() {

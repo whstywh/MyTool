@@ -40,8 +40,9 @@ class MUDPService(var address: InetSocketAddress) {
     fun bind() {
         try {
             isStop = false
+            //绑定端口
             channel = bootstrap.bind(0).sync().channel()
-            //监听服务器关闭
+            //监听服务器关闭并阻塞
             channel?.closeFuture()?.await()
         } catch (e: Exception) {
         } finally {
@@ -133,7 +134,9 @@ class EntityEncoder(private var remoteAddress: InetSocketAddress) : MessageToMes
     }
 }
 
-
+/*
+* 业务逻辑处理
+* */
 class EntityHandler : SimpleChannelInboundHandler<DatagramPacket>() {
 
 
@@ -165,8 +168,6 @@ class EntityHandler : SimpleChannelInboundHandler<DatagramPacket>() {
 
     /*
     * TODO: 接受数据
-    *
-    * 业务逻辑处理
     * */
     override fun channelRead0(p0: ChannelHandlerContext?, p1: DatagramPacket?) {
 

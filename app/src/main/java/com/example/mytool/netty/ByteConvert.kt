@@ -6,6 +6,7 @@ package com.example.mytool.netty
  */
 object ByteConvert {
 
+    //16进制 0xff : 10进制 255 : 2进制 1111 1111
     /*8字节 long -> 数组*/
     fun longToBytes(n: Long): ByteArray {
         val b = ByteArray(8)

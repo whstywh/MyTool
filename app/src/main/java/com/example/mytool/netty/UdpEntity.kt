@@ -14,7 +14,7 @@ class UdpEntity(
 
     fun getBytes(): ByteArray? {
 
-        val len = 36 + data.size
+        val len = 4 + data.size
 
         val da = ByteArray(len) { 0 }
 

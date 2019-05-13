@@ -85,14 +85,14 @@ class RetrofitClient private constructor() {
                 val okHttpClient = OkHttpClient().newBuilder()
                     .sslSocketFactory(sslContext.socketFactory, trustManager)
                     //信任当前证书设置
-                    .hostnameVerifier(TrustAllHostnameVerifier())
+                    .hostnameVerifier(MHostnameVerifier())
                     .addInterceptor(LoggingInterceptor())
                     .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
                     .readTimeout(TIMEOUT, TimeUnit.SECONDS)
                     .build()
 
                 val retrofit = Retrofit.Builder()
-                    .baseUrl("https://45.76.143.175:3443/")
+                    .baseUrl("https://1.1.1.1:443/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                     .client(okHttpClient)

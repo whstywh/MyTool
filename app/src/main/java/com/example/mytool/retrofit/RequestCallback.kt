@@ -11,7 +11,7 @@ import io.reactivex.disposables.Disposable
 abstract class RequestCallback<T : ResponseWrapper> : MaybeObserver<T> {
 
     abstract fun success(t: T)
-    abstract fun faiilure(e: ResponseWrapper)
+    abstract fun fail(e: ResponseWrapper)
 
     private object Status {
         const val resultCode = 0
@@ -22,7 +22,7 @@ abstract class RequestCallback<T : ResponseWrapper> : MaybeObserver<T> {
             success(t)
             return
         }
-        faiilure(ResponseWrapper(t.result, t.reason, t.resultCode))
+        fail(ResponseWrapper(t.result, t.reason, t.resultCode))
     }
 
 
@@ -34,6 +34,6 @@ abstract class RequestCallback<T : ResponseWrapper> : MaybeObserver<T> {
 
     override fun onError(e: Throwable) {
 
-        faiilure(ResponseWrapper("", e.message.toString(), -1))
+        fail(ResponseWrapper("", e.message.toString(), -1))
     }
 }
