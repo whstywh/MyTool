@@ -2,6 +2,7 @@ package com.example.mytool.vpn
 
 import android.content.Intent
 import android.net.VpnService
+import android.os.Build
 import com.example.mytool.netty.MUDPService
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -79,10 +80,15 @@ class MVPNService : VpnService(), Runnable {
             it.setMtu(1500)
             //虚拟网络端口的IP地址
             it.addAddress("10.8.0.2", 32)
-            //路由,如果是0.0.0.0/0的话，则会将所有的IP包都路由到虚拟端口上
+            //路由,如果是0.0.0.0/0的话，则会将所有的IP数据包都路由到虚拟端口上
             it.addRoute("0.0.0.0", 0)
-            //该端口的DNS服务器地址
+            //该端口的DNS服务器地址,可添加多个
             it.addDnsServer("114.114.114.114")
+            it.addDnsServer("8.8.4.4")
+            // 添加需要拦截的应用，其他应用则不被拦截
+            // 如果应用未安装时 这里会拋出未找到应用的异常。
+            it.addAllowedApplication("packageName1")
+            it.addAllowedApplication("packageName2")
             //建立的VPN连接的名字，会在系统管理的与VPN连接相关的通知栏和对话框中显示出来
             it.setSession("test")
             return@let it.establish()
@@ -95,7 +101,7 @@ class MVPNService : VpnService(), Runnable {
             ins.use { input ->
                 ous.use {
                     while (size != -1 && isRunning) {
-                        while (ins.read(byteArray).also { size = it } > 0 && isRunning) {
+                        while (input.read(byteArray).also { size = it } > 0 && isRunning) {
                             if (MUDPService.instance?.isStop() == true) {
                                 isRunning = false
                             }
