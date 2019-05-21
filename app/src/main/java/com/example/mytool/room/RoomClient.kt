@@ -11,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * description：数据库客户端
  */
 @Database(
-    entities = [BookTable::class,User::class],
+    entities = [BookTable::class,User::class,ComplexDataTable::class,CData::class],
     version = 1
 )
 @TypeConverters(TypeConverter::class)

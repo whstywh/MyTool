@@ -61,4 +61,19 @@ interface RoomDao {
     fun queryLike(name: String): Maybe<List<BookTable>>
 
 
+
+    /*TODO: 复杂数据-查*/
+
+    @Transaction
+    @Query("SELECT * FROM ComplexDataTable")
+    fun queryComplex(): Maybe<TableWithCData>
+
+    /*TODO: 复杂数据
+    *
+    * 添加数据要先添加ComplexDataTable，然后根据ComplexDataTable 的id添加CData，
+    * 删除数据，要先根据ComplexDataTable的id删除CData表中的数据。
+    * */
+
+
+
 }

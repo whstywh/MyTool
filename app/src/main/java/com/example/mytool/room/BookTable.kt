@@ -1,4 +1,3 @@
-
 package com.example.mytool.room
 
 import androidx.room.*
@@ -17,7 +16,7 @@ import androidx.room.ForeignKey.CASCADE
      * 可以使用 @Index 注解的 unique 属性设置为 true 来强制这个字段唯一。
      */
     indices = [Index(value = ["book_name"], unique = true),
-        Index(value =["book_user_id"],unique = true)],
+        Index(value = ["book_user_id"], unique = true)],
     /*
     * ForeignKey中的 onDelete()和 onUpdate(), 通过这两个属性的值来设置当User对象被删除／更新时，Book对象作出的响应。
     *
@@ -43,7 +42,7 @@ data class BookTable(
     var id: Long,
 
     @ColumnInfo(name = "book_name")//字段名
-    var name: String ,
+    var name: String,
 
     @Ignore//忽略持久化，该字段将不会保存在数据库中
     var author: String,
@@ -56,20 +55,18 @@ data class BookTable(
 
     /*
     * 注解嵌套的对象
-    * book_table表中字段:id,name,author,dir,userid,price,unit
+    * book_table表中字段:id,name,author,dir,userid, price , unit
     * */
     @Embedded
     var price: Price?
 
-){
-    constructor():this(1,"","",null,0,null)
+) {
+    constructor() : this(1, "", "", null, 0, null)
 }
 
 
+data class Dir(var name: String)
 
-data class Dir(
-    var name: String
-)
 
 @Entity(tableName = "user_table")
 data class User(
@@ -78,11 +75,12 @@ data class User(
     var userid: Long
 )
 
+
 data class Price(
-    @Ignore
+
     var price: Int,
-    @Ignore
+
     var unit: String
-){
-    constructor():this(1,"")
+) {
+//    constructor():this(1,"")
 }
